@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HLD — PayPal Transaction Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #003087 0%, #005ea6 100%);
+      color: #fff;
+      padding: 36px 48px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+    .logo span { color: #ffc439; }
+    header h1 { font-size: 22px; font-weight: 600; opacity: 0.95; }
+    .badge { margin-left: auto; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); padding: 6px 16px; border-radius: 20px; font-size: 13px; }
+
+    /* ── Layout ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+    /* ── Section titles ── */
+    .section { margin-bottom: 48px; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #003087;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 28px 32px;
+    }
+
+    /* ── System architecture diagram ── */
+    .arch {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      align-items: center;
+    }
+
+    .layer {
+      width: 100%;
+      border-radius: 12px;
+      padding: 20px 24px;
+      position: relative;
+    }
+    .layer-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+      opacity: 0.7;
+    }
+    .layer-browser { background: #ebf8ff; border: 2px solid #90cdf4; }
+    .layer-api     { background: #f0fff4; border: 2px solid #9ae6b4; }
+
+    .layer-inner {
+      background: rgba(255,255,255,0.7);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .components-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .comp-box {
+      background: #fff;
+      border: 1.5px solid #bee3f8;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2b6cb0;
+      white-space: nowrap;
+    }
+    .comp-box.green { border-color: #9ae6b4; color: #276749; background: #f0fff4; }
+    .comp-box.orange { border-color: #fbd38d; color: #744210; background: #fffaf0; }
+
+    .arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 4px 0;
+      gap: 2px;
+    }
+    .arrow-label {
+      font-size: 11px;
+      color: #718096;
+      background: #fff;
+      padding: 2px 10px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      font-weight: 500;
+    }
+    .arrow-line {
+      width: 2px;
+      height: 18px;
+      background: linear-gradient(to bottom, #90cdf4, #9ae6b4);
+    }
+    .arrow-head {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid #68d391;
+    }
+
+    .middleware-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .middleware-box {
+      flex: 1;
+      min-width: 140px;
+      background: #fff;
+      border: 1.5px solid #9ae6b4;
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .middleware-box .mw-title { font-size: 12px; font-weight: 700; color: #276749; margin-bottom: 4px; }
+    .middleware-box .mw-sub   { font-size: 11px; color: #718096; }
+
+    .routes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .route {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .method {
+      font-weight: 700;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      min-width: 36px;
+      text-align: center;
+    }
+    .get    { background: #c6f6d5; color: #22543d; }
+    .post   { background: #bee3f8; color: #1a365d; }
+    .put    { background: #fefcbf; color: #744210; }
+    .delete { background: #fed7d7; color: #742a2a; }
+
+    .store-box {
+      background: #fff;
+      border: 1.5px dashed #9ae6b4;
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .store-item { font-size: 12px; color: #4a5568; display: flex; align-items: center; gap: 6px; }
+    .store-item .dot { width: 8px; height: 8px; border-radius: 50%; background: #68d391; }
+
+    /* ── Component tree ── */
+    .tree { font-family: 'Courier New', monospace; font-size: 13px; line-height: 2; }
+    .tree-node {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 0;
+    }
+    .tree-connector { color: #a0aec0; white-space: pre; }
+    .tree-name { font-weight: 600; color: #003087; }
+    .tree-desc { color: #718096; font-size: 12px; font-family: 'Segoe UI', sans-serif; }
+    .tree-chip {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-family: 'Segoe UI', sans-serif;
+      font-weight: 600;
+    }
+    .chip-hook  { background: #fefcbf; color: #744210; }
+    .chip-ui    { background: #ebf8ff; color: #2b6cb0; }
+    .chip-auth  { background: #fed7d7; color: #742a2a; }
+
+    /* ── Flow diagrams ── */
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+    .flow-step {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2d3748;
+      text-align: center;
+      min-width: 120px;
+    }
+    .flow-step.blue   { border-color: #90cdf4; background: #ebf8ff; color: #2b6cb0; }
+    .flow-step.green  { border-color: #9ae6b4; background: #f0fff4; color: #276749; }
+    .flow-step.orange { border-color: #fbd38d; background: #fffaf0; color: #744210; }
+    .flow-arrow { padding: 0 6px; color: #a0aec0; font-size: 18px; }
+
+    /* ── Tables ── */
+    .hld-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .hld-table th { background: #f7fafc; padding: 12px 16px; text-align: left; font-weight: 600; color: #4a5568; border-bottom: 2px solid #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .hld-table td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748; }
+    .hld-table tr:last-child td { border-bottom: none; }
+    .hld-table tr:hover td { background: #f7fafc; }
+    .concern { font-weight: 600; color: #003087; }
+    .upgrade { display: inline-block; background: #ebf8ff; color: #2b6cb0; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+
+    /* ── SQL block ── */
+    pre {
+      background: #1a202c;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 24px 28px;
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+    .sql-kw  { color: #63b3ed; font-weight: 700; }
+    .sql-type{ color: #68d391; }
+    .sql-str { color: #fbd38d; }
+    .sql-cmt { color: #718096; font-style: italic; }
+
+    /* ── Index badges ── */
+    .index-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .index-badge {
+      background: #2d3748;
+      border: 1px solid #4a5568;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #68d391;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 12px;
+      color: #a0aec0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Pay<span>Pal</span></div>
+  <h1>Transaction Dashboard — High Level Design</h1>
+  <div class="badge">Interview Project</div>
+</header>
+
+<main>
+
+  <!-- ── 1. System Architecture ── -->
+  <div class="section">
+    <div class="section-title">1 · System Architecture</div>
+    <div class="card">
+      <div class="arch">
+
+        <!-- Browser layer -->
+        <div class="layer layer-browser" style="width:100%">
+          <div class="layer-label">🌐 Browser</div>
+          <div class="layer-inner">
+            <div style="font-size:12px;color:#2b6cb0;font-weight:700;margin-bottom:10px;">React App — port 3000</div>
+            <div class="components-row">
+              <div class="comp-box">Login</div>
+              <div class="comp-box">Dashboard</div>
+              <div class="comp-box">SummaryCards</div>
+              <div class="comp-box">TransactionTable</div>
+              <div class="comp-box">TransactionModal</div>
+              <div class="comp-box">Filters</div>
+              <div class="comp-box">Pagination</div>
+            </div>
+            <div style="margin-top:12px; font-size:11px; color:#4a5568;">
+              ↳ Custom Hooks: <strong>useAuth</strong> · <strong>useTransactions</strong> · <strong>useSummary</strong>
+              &nbsp;|&nbsp; State managed via <strong>useState / useEffect / useCallback</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arrow -->
+        <div class="arrow">
+          <div class="arrow-line"></div>
+          <div class="arrow-label">fetch() + Bearer Token · HTTP proxied via webpack-dev-server</div>
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+
+        <!-- API layer -->
+        <div class="layer layer-api" style="width:100%">
+          <div class="layer-label">⚙️ Node.js API Server — port 4000</div>
+
+          <div class="middleware-row">
+            <div class="middleware-box">
+              <div class="mw-title">🚦 Rate Limiter</div>
+              <div class="mw-sub">100 req/min per IP<br/>429 on breach</div>
+            </div>
+            <div class="middleware-box">
+              <div class="mw-title">🔐 Auth Middleware</div>
+              <div class="mw-sub">Bearer token check<br/>401 on invalid</div>
+            </div>
+            <div class="middleware-box">
+              <div class="mw-title">⚡ Response Cache</div>
+              <div class="mw-sub">In-memory TTL: 5s<br/>X-Cache: HIT/MISS</div>
+            </div>
+            <div class="middleware-box">
+              <div class="mw-title">🌐 CORS</div>
+              <div class="mw-sub">Allow-Origin headers<br/>OPTIONS preflight</div>
+            </div>
+          </div>
+
+          <div class="layer-inner" style="margin-bottom:10px;">
+            <div style="font-size:11px;color:#276749;font-weight:700;margin-bottom:10px;">ROUTER / HANDLERS</div>
+            <div class="routes-grid">
+              <div class="route"><span class="method post">POST</span>/auth/login</div>
+              <div class="route"><span class="method post">POST</span>/auth/logout</div>
+              <div class="route"><span class="method get">GET</span>/transactions?page&amp;limit&amp;filter</div>
+              <div class="route"><span class="method post">POST</span>/transactions</div>
+              <div class="route"><span class="method put">PUT</span>/transactions/:id</div>
+              <div class="route"><span class="method delete">DEL</span>/transactions/:id &nbsp;<em style="font-size:10px;color:#718096">admin only</em></div>
+              <div class="route"><span class="method get">GET</span>/summary</div>
+            </div>
+          </div>
+
+          <div class="store-box">
+            <div class="store-item"><div class="dot"></div>50 seed transactions (Array)</div>
+            <div class="store-item"><div class="dot"></div>Token Map (auth sessions)</div>
+            <div class="store-item"><div class="dot"></div>Rate Map (IP counters)</div>
+            <div class="store-item"><div class="dot"></div>Cache Map (URL → response)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. Component Architecture ── -->
+  <div class="section">
+    <div class="section-title">2 · Component Architecture</div>
+    <div class="card">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:14px;">Component Tree</div>
+          <div class="tree">
+            <div class="tree-node"><span class="tree-name">App</span><span class="tree-chip chip-auth">root</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">├── </span><span class="tree-name">Login</span><span class="tree-chip chip-auth" style="margin-left:6px">auth</span><span class="tree-desc" style="margin-left:8px">useAuth hook</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">├── </span><span class="tree-name">Header</span><span class="tree-chip chip-ui" style="margin-left:6px">ui</span><span class="tree-desc" style="margin-left:8px">logout, user info</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">├── </span><span class="tree-name">SummaryCards</span><span class="tree-chip chip-hook" style="margin-left:6px">hook</span><span class="tree-desc" style="margin-left:8px">useSummary</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">├── </span><span class="tree-name">Filters</span><span class="tree-chip chip-ui" style="margin-left:6px">ui</span><span class="tree-desc" style="margin-left:8px">search, sort, type</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">├── </span><span class="tree-name">TransactionTable</span><span class="tree-chip chip-hook" style="margin-left:6px">hook</span><span class="tree-desc" style="margin-left:8px">useTransactions</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">├── </span><span class="tree-name">Pagination</span><span class="tree-chip chip-ui" style="margin-left:6px">ui</span><span class="tree-desc" style="margin-left:8px">page controls</span></div>
+            <div class="tree-node" style="padding-left:20px"><span class="tree-connector">└── </span><span class="tree-name">TransactionModal</span><span class="tree-chip chip-ui" style="margin-left:6px">ui</span><span class="tree-desc" style="margin-left:8px">create / edit form</span></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:14px;">Custom Hooks</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="background:#fffaf0;border:1.5px solid #fbd38d;border-radius:8px;padding:14px 16px;">
+              <div style="font-weight:700;color:#744210;font-size:13px;margin-bottom:4px;">useAuth</div>
+              <div style="font-size:12px;color:#718096;">login, logout, token, user state · sessionStorage persistence</div>
+            </div>
+            <div style="background:#ebf8ff;border:1.5px solid #90cdf4;border-radius:8px;padding:14px 16px;">
+              <div style="font-weight:700;color:#2b6cb0;font-size:13px;margin-bottom:4px;">useTransactions</div>
+              <div style="font-size:12px;color:#718096;">fetch, create, update, delete · loading/error states · auto-refetch on filter change</div>
+            </div>
+            <div style="background:#f0fff4;border:1.5px solid #9ae6b4;border-radius:8px;padding:14px 16px;">
+              <div style="font-weight:700;color:#276749;font-size:13px;margin-bottom:4px;">useSummary</div>
+              <div style="font-size:12px;color:#718096;">totals aggregation · credit / debit / balance · status counts</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. Data Flows ── -->
+  <div class="section">
+    <div class="section-title">3 · Data Flows</div>
+    <div class="card" style="display:flex;flex-direction:column;gap:28px;">
+
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:12px;">🔐 Authentication Flow</div>
+        <div class="flow">
+          <div class="flow-step blue">User enters<br/>credentials</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">POST<br/>/auth/login</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step green">Server validates<br/>returns token</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step orange">sessionStorage<br/>stores token</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step blue">All requests<br/>+ Auth header</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:12px;">📝 CRUD Flow</div>
+        <div class="flow">
+          <div class="flow-step blue">User action<br/>(click)</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">React state<br/>update</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">fetch() +<br/>Bearer token</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step green">API executes<br/>op</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step orange">Cache<br/>invalidated</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step blue">React<br/>re-fetches</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#4a5568;margin-bottom:12px;">📄 Pagination Flow</div>
+        <div class="flow">
+          <div class="flow-step blue">Filter / page<br/>change</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step orange">filters state<br/>reset page=1</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">useEffect<br/>re-runs</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">GET /transactions<br/>?page=N&limit=10</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step green">Returns<br/>{ data, meta }</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step blue">Table +<br/>Pagination render</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 4. Security ── -->
+  <div class="section">
+    <div class="section-title">4 · Security Design</div>
+    <div class="card">
+      <table class="hld-table">
+        <thead>
+          <tr><th>Concern</th><th>Current Implementation</th><th>Production Upgrade</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="concern">🔑 Auth</td>
+            <td>Random Bearer token in server Map</td>
+            <td><span class="upgrade">JWT</span> RS256 signed, short expiry + refresh tokens</td>
+          </tr>
+          <tr>
+            <td class="concern">🛡 Authorization</td>
+            <td>Role check on DELETE — 403 for non-admin</td>
+            <td><span class="upgrade">RBAC</span> middleware with permission scopes</td>
+          </tr>
+          <tr>
+            <td class="concern">🚦 Rate Limiting</td>
+            <td>100 req/min per IP, in-memory Map</td>
+            <td><span class="upgrade">Redis</span> sliding window, distributed</td>
+          </tr>
+          <tr>
+            <td class="concern">🌐 CORS</td>
+            <td>Allow-Origin: * for development</td>
+            <td>Restrict to specific domain only</td>
+          </tr>
+          <tr>
+            <td class="concern">✅ Validation</td>
+            <td>Required fields, parseFloat on amount</td>
+            <td><span class="upgrade">Zod</span> / Joi schema validation</td>
+          </tr>
+          <tr>
+            <td class="concern">🔒 Secrets</td>
+            <td>Hardcoded credentials (demo only)</td>
+            <td><span class="upgrade">Vault</span> / AWS Secrets Manager + env vars</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 5. Scalability ── -->
+  <div class="section">
+    <div class="section-title">5 · Scalability — Current vs Production</div>
+    <div class="card">
+      <table class="hld-table">
+        <thead>
+          <tr><th>Component</th><th>Current (Demo)</th><th>Production Upgrade Path</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="concern">🗄 Data Store</td>
+            <td>In-memory Array (resets on restart)</td>
+            <td><span class="upgrade">PostgreSQL</span> with indexes on date, type, status</td>
+          </tr>
+          <tr>
+            <td class="concern">⚡ Cache</td>
+            <td>In-memory Map, 5s TTL</td>
+            <td><span class="upgrade">Redis</span> distributed cache with configurable TTL</td>
+          </tr>
+          <tr>
+            <td class="concern">🔐 Auth</td>
+            <td>Token Map (lost on restart)</td>
+            <td><span class="upgrade">JWT</span> + Redis blacklist for revocation</td>
+          </tr>
+          <tr>
+            <td class="concern">📄 Pagination</td>
+            <td>Offset-based (Array slice)</td>
+            <td><span class="upgrade">Cursor</span>-based for deep pages at scale</td>
+          </tr>
+          <tr>
+            <td class="concern">🔍 Search</td>
+            <td>JS Array filter (linear scan)</td>
+            <td><span class="upgrade">Elasticsearch</span> for full-text search</td>
+          </tr>
+          <tr>
+            <td class="concern">🖥 Frontend</td>
+            <td>Single bundle, full re-fetch</td>
+            <td><span class="upgrade">React Query</span> + code splitting + lazy loading</td>
+          </tr>
+          <tr>
+            <td class="concern">☁️ Infra</td>
+            <td>Single Node process</td>
+            <td><span class="upgrade">K8s</span> + load balancer + horizontal scaling</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 6. DB Schema ── -->
+  <div class="section">
+    <div class="section-title">6 · Database Schema (Production)</div>
+    <div class="card">
+      <pre><span class="sql-kw">CREATE TABLE</span> transactions (
+  id           <span class="sql-type">UUID</span>           <span class="sql-kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  user_id      <span class="sql-type">UUID</span>           <span class="sql-kw">NOT NULL REFERENCES</span> users(id),
+  description  <span class="sql-type">VARCHAR(255)</span>   <span class="sql-kw">NOT NULL</span>,
+  amount       <span class="sql-type">DECIMAL(15,2)</span>  <span class="sql-kw">NOT NULL</span>,
+  type         <span class="sql-type">ENUM</span>(<span class="sql-str">'CREDIT'</span>, <span class="sql-str">'DEBIT'</span>)                  <span class="sql-kw">NOT NULL</span>,
+  status       <span class="sql-type">ENUM</span>(<span class="sql-str">'PENDING'</span>, <span class="sql-str">'COMPLETED'</span>, <span class="sql-str">'FAILED'</span>)  <span class="sql-kw">DEFAULT</span> <span class="sql-str">'PENDING'</span>,
+  category     <span class="sql-type">VARCHAR(50)</span>,
+  currency     <span class="sql-type">CHAR(3)</span>        <span class="sql-kw">DEFAULT</span> <span class="sql-str">'USD'</span>,
+  created_at   <span class="sql-type">TIMESTAMP</span>      <span class="sql-kw">DEFAULT</span> NOW(),
+  updated_at   <span class="sql-type">TIMESTAMP</span>      <span class="sql-kw">DEFAULT</span> NOW()
+);</pre>
+
+      <div class="index-grid">
+        <div class="index-badge">idx_tx_user_id → transactions(user_id)</div>
+        <div class="index-badge">idx_tx_type    → transactions(type)</div>
+        <div class="index-badge">idx_tx_status  → transactions(status)</div>
+        <div class="index-badge">idx_tx_created → transactions(created_at DESC)</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>PayPal Transaction Dashboard · HLD · Interview Project</footer>
+
+</body>
+</html>
